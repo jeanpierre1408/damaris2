@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .text-content {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .question {
+            margin-bottom: 20px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .option {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option:hover {
+            background: #e9ecef;
+        }
+
+        .option.selected {
+            background: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+
+        .next-button {
+            display: block;
+            margin: 20px 0;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            float: right;
+        }
+
+        .next-button:hover {
+            background: #0056b3;
+        }
+
+        .progress-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 60px;
+            clear: both;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #dee2e6;
+            border-radius: 50%;
+        }
+
+        .dot.active {
+            background: #007bff;
+        }
+
+        #results {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .congratulations {
+            font-size: 24px;
+            color: #28a745;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .score-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 30px auto;
+        }
+
+        .progress-ring {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+        }
+
+        .progress-ring .background {
+            stroke: #f0f0f0;
+        }
+
+        .progress-ring .progress {
+            stroke: #28a745;
+            transition: stroke-dasharray 0.5s ease;
+        }
+
+        .score-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .answers-review {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .answer-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        .correct {
+            color: #28a745;
+            margin-left: 10px;
+        }
+
+        .incorrect {
+            color: #dc3545;
+            margin-left: 10px;
+        }
+
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="quiz-content"></div>
+        <div id="results">
+            <button id="restart-button" class="next-button" style="display: none;">Volver al Inicio</button>
+            <div class="congratulations">¡Felicidades por completar el quiz!</div>
+            <div class="score-container">
+                <svg class="progress-ring" viewBox="0 0 100 100">
+                    <circle class="background" cx="50" cy="50" r="45" />
+                    <circle class="progress" cx="50" cy="50" r="45" />
+                </svg>
+                <div class="score-text">0%</div>
+            </div>
+            <div class="answers-review"></div>
+        </div>
+        <button id="next-button" class="next-button">Siguiente</button>
+        <div class="progress-dots" id="progress-dots"></div>
+    </div>
+
+    <script>
+        const quizContent = [
+            {
+                type: 'text',
+                content: `Asumir la tarea del pensar, conlleva la posibilidad de crear y recrear un sentido para la vida; implica que, aun cuando no lleguemos a respuestas definitivas, llegaremos a respuestas mejores que las que tenemos ahora y que nos permitirán 
+Vivir una vida más realizada y autónoma. Sócrates fue muy claro al respecto al afirmar que una vida sin examen, sin 
+Reflexión, no tenía objeto de ser vivida. Además, el pensar evita que caigamos presos del engaño y que nos admiramos 
+A cualquier código o regla sin reflexión previa. Pero la razón más importante está en el vinculo fundamental que hay 
+Entre el pensar y el mal. Fue precisamente cuando Hanna Arendt cubría el juicio de Adolfo Eichmann en Jerusalén, 
+responsable nazi de la deportación y muerte de los judíos, que la relación entre el mal y el pensar surgió como una problemática. El verificar que Eichmann no era un «hombre malo», llevó a Arendt a preguntarse si es posible realizar 
+(tanta) maldad sin ser una mala persona. Su obra deja en claro que sí es posible y que este tipo de mal es el «mal banal» fruto de la incapacidad de pensar. La obra sobre Eichmann evidencia que una persona sin maldad y sin especiales motivos para el mal es capaz de infinito mal si no es capaz de pensar.`
+            },
+            {
+                type: 'question',
+                question: '¿Cuál es la idea principal del texto?',
+                options: ['Una vida sin sentido no vale la pena de ser vivida.', 'El asumir la tarea del pensar trae la posibilidad de crear un sentido a la vida.', 'La reflexión mejora las respuestas que aún no tenemos.', 'El mal es el resultado de la capacidad de pensar del ser humano.','El pensar evita que nos engañen y aceptemos reglas sin reflexión.'],
+                correct: 1
+            },
+            {
+                type: 'text',
+                content: `Luis Pasteur, hijo de un curtidor que había luchado con las tropas de Napoleón, trabajo infatigablemente para convertirse en químico. El Lille estudió las fermentaciones en la fabricación del alcohol, descubriendo que no las motivaba, según, se creía, un cambio químico, si no la acción de las bacterias, nombre dado recientemente a los microorganismos descubiertos por el microscopio. Tras muchas controversias, sus teorías fueron aceptadas y se fundo la bacteriología.
+Pasteur aplicó su estudio de la bacteria a enfermedades, primero de animales, plantas y luego del hombre. Descubrió que la epidemia que hacía estragos entre los gusanos de seda arruinando una importante industria de Francia, debido a una bacteria y mostró el modo de combatirla. Luego estudió el mortal ántrax del ganado, también debido a bacilos. Aplicó el método de vacunación usado por Jenner para la viruela e inóculo con éxito al ganado un cultivo de bacilos de ántrax.
+Asimismo aplicó el principio inoculativo al tratamiento de la hidrofobia. Habiendo descubierto tras muchos trabajos que los perros se inmunizan mediante la vacuna, inoculó a un ser humano y como el remedio tuviera éxito, su tratamiento paulatinamente fue aceptado en todo el mundo.`
+            },
+            {
+                type: 'question',
+                question: '¿Cuál es la idea principal del texto?',
+                options: ['El desarrollo de Pasteur lo llevo a la Medicina ', 'El examen de las controversias químicas de Pasteur y de sus resultados.', 'Pasteur logró grandes avances en el estudio de la hidrofobia y la química.','Pasteur es quien coadyuvó a la fundación de la bacteriología y de su aplicación a las enfermedades.','La solución al enigma de una epidemia y la vida de Pasteur.'],
+                correct: 4
+            },
+            {
+                type: 'question',
+                question: '¿Qué utilizan los aerogeneradores para generar electricidad?',
+                options: ['Luz solar', 'Fuerza del viento', 'Energía térmica'],
+                correct: 1
+            },
+            {
+                type: 'question',
+                question: '¿Qué tipo de energía produce la energía eólica?',
+                options: ['Energía contaminante', 'Energía limpia', 'Energía química'],
+                correct: 1
+            },
+            {
+                type: 'question',
+                question: '¿Qué impacto tiene la energía eólica en comparación con las fuentes tradicionales de energía?',
+                options: ['Aumenta la contaminación', 'Tiene un impacto ambiental reducido', 'Es más costosa y menos eficiente'],
+                correct: 1
+            },
+            {
+                type: 'question',
+                question: '5. ¿Por qué se considera la energía eólica una fuente inagotable?',
+                options: ['Porque se puede almacenar fácilmente', 'Porque produce energía continuamente sin necesidad de mantenimiento', 'Porque el viento es un recurso natural que no se agota'],
+                correct: 2
+            }
+        ];
+
+        let currentStep = 0;
+        const answers = {};
+
+        function renderContent() {
+            const content = quizContent[currentStep];
+            const contentDiv = document.getElementById('quiz-content');
+
+            if (content.type === 'text') {
+                contentDiv.innerHTML = `
+                    <div class="text-content">
+                        ${content.content}
+                    </div>
+                `;
+            } else {
+                contentDiv.innerHTML = `
+                    <div class="question">
+                        <h3>${content.question}</h3>
+                        <div class="options">
+                            ${content.options.map((option, index) => `
+                                <div class="option ${answers[currentStep] === index ? 'selected' : ''}" 
+                                     onclick="selectOption(${index})">
+                                    ${option}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            updateProgressDots();
+        }
+
+        function selectOption(index) {
+            answers[currentStep] = index;
+            document.querySelectorAll('.option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.querySelectorAll('.option')[index].classList.add('selected');
+        }
+
+        function updateProgressDots() {
+            const dotsContainer = document.getElementById('progress-dots');
+            dotsContainer.innerHTML = quizContent.map((_, index) => `
+                <div class="dot ${index === currentStep ? 'active' : ''}"></div>
+            `).join('');
+        }
+
+        function calculateScore() {
+            let correct = 0;
+            const questions = quizContent.filter(item => item.type === 'question');
+            questions.forEach((q, index) => {
+                if (answers[index] === q.correct) correct++;
+            });
+            return (correct / questions.length) * 100;
+        }
+
+        function showResults() {
+            const score = calculateScore();
+            const questions = quizContent.filter(item => item.type === 'question');
+
+            // Ocultar el contenido del quiz y mostrar los resultados
+            document.getElementById('quiz-content').style.display = 'none';
+            document.getElementById('next-button').style.display = 'none';
+            document.getElementById('progress-dots').style.display = 'none';
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+
+            // Actualizar el círculo de progreso
+            const circle = document.querySelector('.progress-ring .progress');
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            const offset = circumference - (score / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+
+            // Actualizar el texto del puntaje
+            document.querySelector('.score-text').textContent = `${Math.round(score)}%`;
+
+            // Mostrar la revisión de respuestas
+            const reviewDiv = document.querySelector('.answers-review');
+            reviewDiv.innerHTML = questions.map((q, index) => `
+                <div class="answer-item">
+                    <div class="question-text">${q.question}</div>
+                    <div>
+                        Tu respuesta: ${q.options[answers[index]]}
+                        ${answers[index] === q.correct
+                    ? '<span class="correct">✓ Correcto</span>'
+                    : `<span class="incorrect">✗ Incorrecto - Respuesta correcta: ${q.options[q.correct]}</span>`
+                }
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('next-button').addEventListener('click', () => {
+            if (currentStep === quizContent.length - 1) {
+                showResults();
+            } else {
+                currentStep++;
+                renderContent();
+            }
+        });
+
+        // Iniciar el quiz
+        renderContent();
+    </script>
+</body>
+
+</html>
